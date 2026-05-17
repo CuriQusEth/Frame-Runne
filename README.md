@@ -1,62 +1,69 @@
 # Frame Runner 🚀
 
-**Frame Runner** is a high-performance, precision-based endless runner integrated deeply into the Base blockchain ecosystem. Experience ultra-smooth racing, frame-perfect mechanics, and seamless Web3 wallet support while competing for the top "Frame Score."
+**Frame Runner** is an ultra-smooth, precision-based endless runner seamlessly integrated into the Base blockchain ecosystem. Experience rapid warp racing mechanics, frame-perfect challenges, and next-gen agent interoperability while competing for the ultimate "Frame Score".
 
 ## Overview
 
-Frame Runner combines cyber-neon aesthetics and precision timing with leading-edge blockchain technology. The project integrates **Sign-In with Ethereum (SIWE)** and **ERC-8021 / ERC-8004** compatibility to offer secure score signing, smart contract attribution, and trustless agent interoperability on [Base Mainnet](https://base.org/).
+Designed for Web3 power-users and AI builders, Frame Runner blends cyber-neon aesthetics with cutting-edge protocol standards:
+- **Sign-In with Ethereum (SIWE)** for secure identity and score attribution.
+- **ERC-8021 / ERC-8004** compatibility, demonstrating smart contract attribution and trustless agent interoperability natively on the **Base Mainnet**.
 
 ### Tech Stack
-- **Frontend:** React, TypeScript, Tailwind CSS, Canvas API, Framer Motion
-- **Web3 Ecosystem:** Wagmi, Viem, Base Mainnet
+- **Frontend / Engine:** React, TypeScript, Tailwind CSS, Canvas API, Framer Motion
+- **Web3 Ecosystem:** Wagmi, Viem, Base
 - **Agent Infrastructure (A2A):** Model Context Protocol (MCP), EIP-8004 Registration
-- **Build Tools:** Vite, Express, esbuild
+- **Deployment:** Next.js 14+ / Vercel (Edge & Serverless Support)
 
-## Agent Capabilities & MCP Integration 🤖
+## 🤖 Agent Capabilities & MCP Integration
 
-This project comes bundled with **Warp Racer AI**, a high-performance AI Agent mapped via the `.well-known/agent-card.json` registry. The agent is exposed securely using the **Model Context Protocol (MCP)** serving real-time events over an SSE Connection.
+This project is bundled with **Warp Racer AI**, a hyper-optimized agent designed specifically for endless running automation, multi-track orchestration, and competitive execution. 
+
+Warp Racer AI exposes a powerful set of **Model Context Protocol (MCP)** tools through a secure Next.js Server-Sent Events (SSE) stream endpoint (`/api/mcp`). 
 
 ### Available MCP Tools:
-- `get_race_status` — Gets the real-time status of a warp race segment.
-- `start_race` — Initiates an automated racing session.
-- `get_leaderboard` — Fetches current on-chain competitive rankings.
-- `optimize_speed` — Triggers speed optimizations via drift calculations.
-- `get_track_info` — Returns metadata for procedural tracks.
+- `get_race_status` — Gets the real-time status of any active warp race segment.
+- `start_race` — Initiates an automated racing and orchestration session.
+- `get_leaderboard` — Fetches current competitive on-chain rankings.
+- `optimize_speed` — Triggers speed optimizations via complex drift calculations.
+- `get_track_info` — Returns metadata parameters for procedural neon tracks.
 
-## EIP-8004 Registration 📋
+### Connection Guide
+To connect a local MCP client to this server:
+1. Connect directly to the `/api/mcp` endpoint using a standard MCP HTTP/SSE transport client.
+2. The endpoint broadcasts `endpoint` capabilities instantly and receives JSON-RPC execution payloads via standard POST requests.
 
-The AI Agent identity for Frame Runner complies with EIP-8004. You can analyze its credentials at the `/.well-known/agent-card.json` route. The agent publishes specific racing skills: `warp-racing`, `multi-track-orchestration`, `real-time-automation`, `performance-optimization`, `competitive-orchestration`, and `ecosystem-coordination`.
+## 📋 EIP-8004 Registration
 
-## Playing the Game Locally 🏃‍♂️
+The AI Agent identity for Frame Runner complies tightly with the **EIP-8004 specification**. You can audit its public credentials and capabilities via the immutable agent card route at `/.well-known/agent-card.json`.
 
-### Installation
+The Warp Racer AI registry publishes the following primary skills: 
+- `warp-racing`
+- `multi-track-orchestration` 
+- `real-time-automation`
+- `performance-optimization`
+- `competitive-orchestration`
+- `ecosystem-coordination`
 
-1. Clone the repository and install dependencies:
+## 🏃‍♂️ Running the Game Locally
+
+1. Clone this repository locally.
+2. Install the necessary dependencies:
    ```bash
    npm install
    ```
-2. Create an environment file if required (no private keys are required for general execution):
+3. Prepare your local environment (no private keys are required for general offline execution!):
    ```bash
    cp .env.example .env
    ```
-3. Start the combined Vite and Express development server:
+4. Start the development server:
    ```bash
    npm run dev
    ```
-4. Access the game at `http://localhost:3000`. 
-5. Connect your Web3 wallet on the Base network to log official runs via Signature!
+5. Dive into the game at `http://localhost:3000`. Connect your EVM Wallet on Base to participate in the verified on-chain score signatures!
 
-### Interactions:
-- Tap / Space: **JUMP**
-- Right Click / Down Arrow: **DASH / SLIDE**
-
-## Deployment
-For production usage, the project compiles the React client and the Express backend into a scalable Node.js package:
-```bash
-npm run build
-npm start
-```
-Note: If deploying on edge functions or serverless configurations like **Vercel**, ensure you map standard `app/api/*` routes rather than deploying the standalone `server.ts` Express file.
+### Controls:
+- **JUMP**: Tap / Space / Up Arrow
+- **DASH / SLIDE**: Right Click / Down Arrow
 
 ## License
 
