@@ -1,70 +1,63 @@
-# Frame Runner
+# Frame Runner 🚀
 
-**Frame Runner** is an ultra-smooth, precision-based endless runner where perfect timing and frame-perfect inputs are everything. You control a sleek digital runner who sprints through ever-changing neon cyber worlds, dodging obstacles with split-second timing while chasing the highest "Frame Score".
+**Frame Runner** is a high-performance, precision-based endless runner integrated deeply into the Base blockchain ecosystem. Experience ultra-smooth racing, frame-perfect mechanics, and seamless Web3 wallet support while competing for the top "Frame Score."
 
-## Features
+## Overview
 
-- **High-Performance Canvas Engine:** Runs at a buttery smooth 60fps with responsive inputs.
-- **Frame-Perfect Mechanics:** Hitting inputs in a very tight timing window gives massive multipliers and satisfying visual effects.
-- **Cyber-Neon Aesthetic:** Clean, ultra-modern visuals with vibrant colors, glowing trails, and particle bursts.
-- **On-Chain Integration:**
-  - **Base Mainnet Support:** Connect your Web3 wallet via Wagmi and Viem.
-  - **ERC-8021 Attribution:** Built-in protocol specification support for smart contract attribution (Builder Code & Attribution Code).
-  - **ERC-8004 Trustless Agents:** Infrastructure ready for trustless agent task delegation.
-  - **SIWE Signatures:** Submit high scores securely off-chain via "Sign-In with Ethereum".
-  - **Say GM:** Example on-chain transaction feature to demonstrate ERC-8021 integration.
-- **Model Context Protocol (MCP) Server:** Features an embedded Agent mapping via MCP (A2A Ready) running via an Express server for Warp Racer AI.
+Frame Runner combines cyber-neon aesthetics and precision timing with leading-edge blockchain technology. The project integrates **Sign-In with Ethereum (SIWE)** and **ERC-8021 / ERC-8004** compatibility to offer secure score signing, smart contract attribution, and trustless agent interoperability on [Base Mainnet](https://base.org/).
 
-## Getting Started
+### Tech Stack
+- **Frontend:** React, TypeScript, Tailwind CSS, Canvas API, Framer Motion
+- **Web3 Ecosystem:** Wagmi, Viem, Base Mainnet
+- **Agent Infrastructure (A2A):** Model Context Protocol (MCP), EIP-8004 Registration
+- **Build Tools:** Vite, Express, esbuild
 
-### Prerequisites
+## Agent Capabilities & MCP Integration 🤖
 
-- Node.js (v18 or higher)
-- npm or yarn
+This project comes bundled with **Warp Racer AI**, a high-performance AI Agent mapped via the `.well-known/agent-card.json` registry. The agent is exposed securely using the **Model Context Protocol (MCP)** serving real-time events over an SSE Connection.
+
+### Available MCP Tools:
+- `get_race_status` — Gets the real-time status of a warp race segment.
+- `start_race` — Initiates an automated racing session.
+- `get_leaderboard` — Fetches current on-chain competitive rankings.
+- `optimize_speed` — Triggers speed optimizations via drift calculations.
+- `get_track_info` — Returns metadata for procedural tracks.
+
+## EIP-8004 Registration 📋
+
+The AI Agent identity for Frame Runner complies with EIP-8004. You can analyze its credentials at the `/.well-known/agent-card.json` route. The agent publishes specific racing skills: `warp-racing`, `multi-track-orchestration`, `real-time-automation`, `performance-optimization`, `competitive-orchestration`, and `ecosystem-coordination`.
+
+## Playing the Game Locally 🏃‍♂️
 
 ### Installation
 
-1. Copy `.env.example` to `.env` and fill in any required configuration variables.
-2. Install dependencies:
+1. Clone the repository and install dependencies:
    ```bash
    npm install
    ```
+2. Create an environment file if required (no private keys are required for general execution):
+   ```bash
+   cp .env.example .env
+   ```
+3. Start the combined Vite and Express development server:
+   ```bash
+   npm run dev
+   ```
+4. Access the game at `http://localhost:3000`. 
+5. Connect your Web3 wallet on the Base network to log official runs via Signature!
 
-### Running Locally
+### Interactions:
+- Tap / Space: **JUMP**
+- Right Click / Down Arrow: **DASH / SLIDE**
 
-To start the development server including the Game and MCP Express Server:
-```bash
-npm run dev
-```
-The game will be available at `http://localhost:3000`.
-
-### Building for Production
-
-Compile the client and server assets for deployment:
+## Deployment
+For production usage, the project compiles the React client and the Express backend into a scalable Node.js package:
 ```bash
 npm run build
+npm start
 ```
-
-Then start the production server:
-```bash
-npm run start
-```
-
-## How to Play
-
-- **Jump:** Tap the screen or press the `Space` / `Arrow Up` key.
-- **Dash/Slide:** Right-click the screen or press the `Arrow Down` key.
-- **Frame Perfect:** Time your jumps and slides perfectly right before an obstacle to rack up major multiplier points!
-- **Connect Wallet:** Enhance your experience and record your runs securely.
-
-## Agent Architecture (A2A)
-
-The project includes an A2A (Agent-to-Agent) compatible `.well-known/agent-card.json` configuration and an active MCP Server exposed at `/api/mcp`. These elements define "Warp Racer AI", enabling interoperability, system prompts, performance optimization, and multi-track orchestration tools.
-
-## Supported Networks
-
-- **Base Mainnet:** Connect with your Web3 wallet to sign runs and perform light transactions.
+Note: If deploying on edge functions or serverless configurations like **Vercel**, ensure you map standard `app/api/*` routes rather than deploying the standalone `server.ts` Express file.
 
 ## License
 
-Copyright © 2024 Frame Runner. All rights reserved.
+Copyright © 2024 Frame Runner. All rights reserved. Open-sourced for the on-chain agent builder community.

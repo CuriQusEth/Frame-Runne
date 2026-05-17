@@ -3,9 +3,9 @@
   "description": "High-performance AI Agent specialized in warp racing mechanics, real-time automation, multi-track management, competitive optimization and ecosystem coordination on Base.",
   "version": "1.0.0",
   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
-  "image": "",
-  "owner": "",
-  "agentWallet": "",
+  "image": "https://warp-racer.ai/logo.png",
+  "owner": "0x0000000000000000000000000000000000000000",
+  "agentWallet": "0x0000000000000000000000000000000000000000",
   "active": true,
   "skills": [
     {
@@ -22,6 +22,21 @@
       "id": "performance-optimization",
       "name": "Performance Optimization",
       "description": "Analyze and optimize racing performance, timing and strategy in real-time."
+    },
+    {
+      "id": "real-time-automation",
+      "name": "Real-Time Automation",
+      "description": "Automated response and processing for in-race events and triggers."
+    },
+    {
+      "id": "competitive-orchestration",
+      "name": "Competitive Orchestration",
+      "description": "Matchmaking, leaderboard management, and competitive balance tuning."
+    },
+    {
+      "id": "ecosystem-coordination",
+      "name": "Ecosystem Coordination",
+      "description": "Cross-platform data sharing, on-chain verification, and system status coordination."
     }
   ],
   "services": [

@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import crypto from "crypto";
-import { createServer as createViteServer } from "vite";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
@@ -14,7 +13,6 @@ import {
 
 const app = express();
 app.use(cors());
-const PORT = 3000;
 
 // Setup MCP Server
 const mcp = new Server(
@@ -159,7 +157,7 @@ mcp.setRequestHandler(GetPromptRequestSchema, async (request) => {
           role: "user",
           content: {
             type: "text",
-            text: `Provide a detailed warp racing strategy for a ${args?.trackType} track, taking into account drift optimizations and momentum.`
+            text: `Provide a detailed warp racing strategy for a ${(args as any)?.trackType} track, taking into account drift optimizations and momentum.`
           }
         }
       ]
@@ -212,32 +210,4 @@ app.get("/api/agent", (req, res) => {
   res.json({ status: "Agent is online and running warp racing protocol." });
 });
 
-async function startServer() {
-  // Serve .well-known directly to avoid dot-folder blocks
-  app.use("/.well-known", express.static(path.join(process.cwd(), "public", ".well-known")));
-
-  if (process.env.NODE_ENV !== "production") {
-    // Vite middleware for development
-    try {
-      const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: "spa", // Fix React refresh conflicts
-      });
-      app.use(vite.middlewares);
-    } catch (e) {
-      console.error("Error creating vite server:", e);
-    }
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-  }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
-
-startServer();
+export default app;
