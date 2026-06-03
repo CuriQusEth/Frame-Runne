@@ -1,20 +1,12 @@
-import express from "express";
-import cors from "cors";
-import crypto from "crypto";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
-  GetPromptRequestSchema,
   ListResourcesRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
 
-const app = express();
-app.use(cors());
-
-// Setup MCP Server
 const mcp = new Server(
   {
     name: "WarpRacerMCP",
@@ -102,39 +94,68 @@ mcp.setRequestHandler(CallToolRequestSchema, async (request) => {
 mcp.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: [] }));
 mcp.setRequestHandler(ListResourcesRequestSchema, async () => ({ resources: [] }));
 
-// Need to keep transports for SSE
 const activeSessions = new Map<string, SSEServerTransport>();
 
-app.get("/api/mcp", async (req, res) => {
-  const sessionId = crypto.randomUUID();
-  const sessionTransport = new SSEServerTransport(`/api/mcp/message?sessionId=${sessionId}`, res);
-  
-  activeSessions.set(sessionId, sessionTransport);
-  
-  res.on("close", () => {
-    activeSessions.delete(sessionId);
-  });
+export async function GET(req: any, res: any) {
+  return handler(req, res);
+}
 
-  await mcp.connect(sessionTransport);
-});
+export async function POST(req: any, res: any) {
+  return handler(req, res);
+}
 
-app.post("/api/mcp/message", express.json(), async (req, res) => {
-  const sessionId = req.query.sessionId as string;
-  const sessionTransport = activeSessions.get(sessionId);
-  if (!sessionTransport) {
-    res.status(404).send("Session not found");
+export default async function handler(req: any, res: any) {
+  // CORS Headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
     return;
   }
-  try {
-    await sessionTransport.handlePostMessage(req, res);
-  } catch (error) {
-    console.error("Error handling MCP message:", error);
-    if (!res.headersSent) res.status(500).send("Internal Server Error");
+
+  // Handle SSE Connection (GET)
+  if (req.method === "GET") {
+    const sessionId = Math.random().toString(36).substring(7);
+    
+    // We mock the ServerResponse stream for SSEServerTransport
+    const sessionTransport = new SSEServerTransport(
+      `/api/mcp?sessionId=${sessionId}`, 
+      res as any
+    );
+    
+    activeSessions.set(sessionId, sessionTransport);
+    
+    res.on("close", () => {
+      activeSessions.delete(sessionId);
+    });
+
+    await mcp.connect(sessionTransport);
+    return;
   }
-});
 
-app.get("/api/agent", (req, res) => {
-  res.json({ status: "Agent is online and running warp racing protocol." });
-});
+  // Handle JSON-RPC Execution (POST)
+  if (req.method === "POST") {
+    const sessionId = req.query.sessionId as string;
+    
+    if (!sessionId) {
+      res.status(400).send("Missing sessionId");
+      return;
+    }
 
-export default app;
+    const sessionTransport = activeSessions.get(sessionId);
+    
+    if (!sessionTransport) {
+      res.status(404).send("Session not found or expired");
+      return;
+    }
+
+    try {
+      await sessionTransport.handlePostMessage(req as any, res as any);
+    } catch (error) {
+      console.error("Error handling MCP message:", error);
+      if (!res.headersSent) res.status(500).send("Internal Server Error");
+    }
+  }
+}
