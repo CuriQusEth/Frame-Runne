@@ -110,6 +110,11 @@ export default async function handler(req: any, res: any) {
 
   // Handle SSE Connection (GET)
   if (req.method === "GET") {
+    // Disable Vercel response buffering
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Content-Encoding", "none");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+
     // We send back an endpoint URL with NO extra query params
     const sessionTransport = new SSEServerTransport("/api/mcp", res);
     const sessionId = sessionTransport.sessionId;
@@ -142,20 +147,26 @@ export default async function handler(req: any, res: any) {
       sessionId = Array.isArray(req.query.sessionId) ? req.query.sessionId[0] : req.query.sessionId;
     }
     
+    // Fallback: If sessionId is missing but there is exactly one active session, use it.
+    // This helps with client testing tools that forget to append the sessionId.
+    if (!sessionId && activeSessions.size === 1) {
+      sessionId = Array.from(activeSessions.keys())[0];
+    }
+    
     if (!sessionId) {
-      res.status(422).send("Missing sessionId parameter (custom 422)");
+      res.status(400).json({ error: "Missing sessionId parameter", url: req.url, query: req.query });
       return;
     }
 
     const sessionTransport = activeSessions.get(sessionId);
     if (!sessionTransport) {
-      res.status(404).send("Session not found or expired (custom 404.1)");
+      res.status(404).send("Session not found or expired");
       return;
     }
 
     try {
-      if (!req.body || Object.keys(req.body).length === 0) {
-         res.status(415).send('Invalid message: Empty Body (custom 415)');
+      if (!req.body || (typeof req.body === 'object' && Object.keys(req.body).length === 0)) {
+         res.status(400).send('Invalid message: Empty Body');
          return;
       }
       
@@ -167,7 +178,7 @@ export default async function handler(req: any, res: any) {
       res.status(202).send("Accepted");
     } catch (error: any) {
       console.error("Error handling MCP message:", error);
-      res.status(417).send(`Invalid message (custom 417): ${error.message || String(error)}`);
+      res.status(400).send(`Invalid message: ${error.message || String(error)}`);
     }
   }
 }
