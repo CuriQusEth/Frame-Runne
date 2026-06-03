@@ -121,6 +121,13 @@ export default async function handler(req: any, res: any) {
     });
 
     await mcp.connect(sessionTransport);
+    
+    // Keep the SSE connection open indefinitely until client disconnects
+    await new Promise((resolve) => {
+      req.on('close', resolve);
+      res.on('close', resolve);
+      sessionTransport.onclose = resolve as any;
+    });
     return;
   }
 
@@ -136,19 +143,19 @@ export default async function handler(req: any, res: any) {
     }
     
     if (!sessionId) {
-      res.status(400).send("Missing sessionId parameter");
+      res.status(422).send("Missing sessionId parameter (custom 422)");
       return;
     }
 
     const sessionTransport = activeSessions.get(sessionId);
     if (!sessionTransport) {
-      res.status(404).send("Session not found or expired");
+      res.status(404).send("Session not found or expired (custom 404.1)");
       return;
     }
 
     try {
       if (!req.body || Object.keys(req.body).length === 0) {
-         res.status(400).send('Invalid message: Empty Body');
+         res.status(415).send('Invalid message: Empty Body (custom 415)');
          return;
       }
       
@@ -160,7 +167,7 @@ export default async function handler(req: any, res: any) {
       res.status(202).send("Accepted");
     } catch (error: any) {
       console.error("Error handling MCP message:", error);
-      res.status(400).send(`Invalid message: ${error.message || String(error)}`);
+      res.status(417).send(`Invalid message (custom 417): ${error.message || String(error)}`);
     }
   }
 }
