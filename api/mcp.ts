@@ -6,6 +6,7 @@ import {
   ListPromptsRequestSchema,
   ListResourcesRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
+import crypto from "crypto";
 
 const mcp = new Server(
   {
@@ -96,14 +97,6 @@ mcp.setRequestHandler(ListResourcesRequestSchema, async () => ({ resources: [] }
 
 const activeSessions = new Map<string, SSEServerTransport>();
 
-export async function GET(req: any, res: any) {
-  return handler(req, res);
-}
-
-export async function POST(req: any, res: any) {
-  return handler(req, res);
-}
-
 export default async function handler(req: any, res: any) {
   // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -117,18 +110,10 @@ export default async function handler(req: any, res: any) {
 
   // Handle SSE Connection (GET)
   if (req.method === "GET") {
-    const sessionId = Math.random().toString(36).substring(7);
+    const sessionId = crypto.randomUUID();
     
-    // Construct absolute URL for the endpoint
-    const host = req.headers.host || "localhost:3000";
-    const protocol = req.headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
-    const absoluteEndpoint = `${protocol}://${host}/api/mcp?sessionId=${sessionId}`;
-    
-    // We mock the ServerResponse stream for SSEServerTransport
-    const sessionTransport = new SSEServerTransport(
-      absoluteEndpoint, 
-      res as any
-    );
+    // We send back an endpoint URL with our sessionId
+    const sessionTransport = new SSEServerTransport(`/api/mcp?sessionId=${sessionId}`, res);
     
     activeSessions.set(sessionId, sessionTransport);
     
@@ -142,34 +127,28 @@ export default async function handler(req: any, res: any) {
 
   // Handle JSON-RPC Execution (POST)
   if (req.method === "POST") {
-    // Parse URL manually to ensure we get query parameters safely
-    const protocol = req.headers["x-forwarded-proto"] || "http";
-    const host = req.headers.host || "localhost";
-    const fullUrl = new URL(req.url, `${protocol}://${host}`);
-    const sessionId = fullUrl.searchParams.get("sessionId") || (req.query && req.query.sessionId);
+    const sessionId = req.query?.sessionId;
     
     if (!sessionId) {
-      res.status(400).send("Missing sessionId");
+      res.status(400).send("Missing sessionId parameter");
       return;
     }
 
     const sessionTransport = activeSessions.get(sessionId);
-    
     if (!sessionTransport) {
       res.status(404).send("Session not found or expired");
       return;
     }
 
     try {
-      const message = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      if (sessionTransport.onmessage) {
-        // SSEServerTransport uses onmessage to receive incoming json payloads
-        await sessionTransport.onmessage(message);
-      }
-      res.status(202).send("Accepted");
+      // Vercel parses req.body automatically, so we pass it as parsedBody 
+      // instead of letting the transport try to read Node's raw request stream
+      const parsedBody = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      await sessionTransport.handlePostMessage(req, res, parsedBody);
     } catch (error) {
       console.error("Error handling MCP message:", error);
       if (!res.headersSent) res.status(500).send("Internal Server Error");
     }
   }
 }
+
