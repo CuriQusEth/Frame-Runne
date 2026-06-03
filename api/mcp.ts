@@ -161,17 +161,21 @@ export default async function handler(req: any, res: any) {
     let sessionTransport = activeSessions.get(sessionId);
 
     if (!sessionTransport) {
-      // Warning: In stateless Vercel Serverless, the instance handling the POST may not be the one holding the SSE stream. 
-      // We will attempt to create a dummy transport to avoid 404 and execute logic, but responses won't reach the client's SSE stream.
       console.warn(`[MCP] Session ${sessionId} not found on this instance. Recreating dummy transport.`);
-      sessionTransport = new SSEServerTransport("/api/mcp", res);
-      // We won't add it to activeSessions as we don't hold the original GET response.
+      const mockRes = {
+        setHeader: () => {},
+        writeHead: () => {},
+        write: (chunk: string) => { console.log("[MCP Dummy Transport Write]", chunk); },
+        end: () => {},
+        on: () => {}
+      };
+      sessionTransport = new SSEServerTransport("/api/mcp", mockRes as any);
     }
 
     try {
       if (!req.body || (typeof req.body === 'object' && Object.keys(req.body).length === 0)) {
          // Returning 202 instead of 400 for empty ping bodies from generic tools
-         res.status(202).send('Accepted');
+         res.status(202).json({ status: "Accepted" });
          return;
       }
       
@@ -180,10 +184,10 @@ export default async function handler(req: any, res: any) {
       if (sessionTransport.onmessage) {
         await sessionTransport.onmessage(parsedBody);
       }
-      res.status(202).send("Accepted");
+      res.status(202).json({ status: "Accepted" });
     } catch (error: any) {
       console.error("Error handling MCP message:", error);
-      res.status(400).send(`Invalid message: ${error.message || String(error)}`);
+      res.status(400).json({ error: `Invalid message: ${error.message || String(error)}` });
     }
   }
 }
