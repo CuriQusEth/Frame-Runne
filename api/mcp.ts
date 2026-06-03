@@ -110,10 +110,9 @@ export default async function handler(req: any, res: any) {
 
   // Handle SSE Connection (GET)
   if (req.method === "GET") {
-    const sessionId = crypto.randomUUID();
-    
-    // We send back an endpoint URL with our sessionId
-    const sessionTransport = new SSEServerTransport(`/api/mcp?sessionId=${sessionId}`, res);
+    // We send back an endpoint URL with NO extra query params
+    const sessionTransport = new SSEServerTransport("/api/mcp", res);
+    const sessionId = sessionTransport.sessionId;
     
     activeSessions.set(sessionId, sessionTransport);
     
@@ -127,7 +126,14 @@ export default async function handler(req: any, res: any) {
 
   // Handle JSON-RPC Execution (POST)
   if (req.method === "POST") {
-    const sessionId = req.query?.sessionId;
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const host = req.headers.host || "localhost";
+    const fullUrl = new URL(req.url || "", `${protocol}://${host}`);
+    
+    let sessionId = fullUrl.searchParams.get("sessionId");
+    if (!sessionId && req.query) {
+      sessionId = Array.isArray(req.query.sessionId) ? req.query.sessionId[0] : req.query.sessionId;
+    }
     
     if (!sessionId) {
       res.status(400).send("Missing sessionId parameter");
@@ -141,13 +147,20 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-      // Vercel parses req.body automatically, so we pass it as parsedBody 
-      // instead of letting the transport try to read Node's raw request stream
+      if (!req.body || Object.keys(req.body).length === 0) {
+         res.status(400).send('Invalid message: Empty Body');
+         return;
+      }
+      
       const parsedBody = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      await sessionTransport.handlePostMessage(req, res, parsedBody);
-    } catch (error) {
+      
+      if (sessionTransport.onmessage) {
+        await sessionTransport.onmessage(parsedBody);
+      }
+      res.status(202).send("Accepted");
+    } catch (error: any) {
       console.error("Error handling MCP message:", error);
-      if (!res.headersSent) res.status(500).send("Internal Server Error");
+      res.status(400).send(`Invalid message: ${error.message || String(error)}`);
     }
   }
 }
