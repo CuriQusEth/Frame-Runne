@@ -1,12 +1,11 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
   ListResourcesRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
-import crypto from "crypto";
 
 const mcp = new Server(
   {
@@ -95,7 +94,12 @@ mcp.setRequestHandler(CallToolRequestSchema, async (request) => {
 mcp.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: [] }));
 mcp.setRequestHandler(ListResourcesRequestSchema, async () => ({ resources: [] }));
 
-const activeSessions = new Map<string, SSEServerTransport>();
+const transport = new StreamableHTTPServerTransport({
+  sessionIdGenerator: undefined, // Stateless mode for Vercel Serverless
+  enableJsonResponse: true, // Native JSON response returning for stateless POST requests
+});
+
+let isConnected = false;
 
 export default async function handler(req: any, res: any) {
   // CORS Headers
@@ -108,87 +112,21 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  // Handle SSE Connection (GET)
-  if (req.method === "GET") {
-    // Disable Vercel response buffering
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("Content-Encoding", "none");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
-
-    const sessionTransport = new SSEServerTransport("/api/mcp/message", res);
-    const sessionId = sessionTransport.sessionId;
-    
-    activeSessions.set(sessionId, sessionTransport);
-    
-    res.on("close", () => {
-      activeSessions.delete(sessionId);
-    });
-
-    await mcp.connect(sessionTransport);
-
-    if (typeof res.flushHeaders === 'function') {
-      res.flushHeaders();
-    }
-    
-    // Keep the SSE connection open indefinitely until client disconnects
-    await new Promise((resolve) => {
-      req.on('close', resolve);
-      res.on('close', resolve);
-      sessionTransport.onclose = resolve as any;
-    });
-    return;
+  // Connect singleton MCP server on first request handler invocation
+  if (!isConnected) {
+    await mcp.connect(transport);
+    isConnected = true;
   }
 
-  // Handle JSON-RPC Execution (POST)
-  if (req.method === "POST") {
-    const protocol = req.headers["x-forwarded-proto"] || "http";
-    const host = req.headers.host || "localhost";
-    const fullUrl = new URL(req.url || "", `${protocol}://${host}`);
-    
-    let sessionId = fullUrl.searchParams.get("sessionId");
-    if (!sessionId && req.query) {
-      sessionId = Array.isArray(req.query.sessionId) ? req.query.sessionId[0] : req.query.sessionId;
-    }
-    
-    // Fallback: If sessionId is missing but there is exactly one active session, use it.
-    // This helps with client testing tools that forget to append the sessionId.
-    if (!sessionId && activeSessions.size === 1) {
-      sessionId = Array.from(activeSessions.keys())[0];
-    } else if (!sessionId) {
-      sessionId = crypto.randomUUID(); // Fallback so it never fails
-    }
-
-    let sessionTransport = activeSessions.get(sessionId);
-
-    if (!sessionTransport) {
-      console.warn(`[MCP] Session ${sessionId} not found on this instance. Recreating dummy transport.`);
-      const mockRes = {
-        setHeader: () => {},
-        writeHead: () => {},
-        write: (chunk: string) => { console.log("[MCP Dummy Transport Write]", chunk); },
-        end: () => {},
-        on: () => {}
-      };
-      sessionTransport = new SSEServerTransport("/api/mcp", mockRes as any);
-    }
-
-    try {
-      if (!req.body || (typeof req.body === 'object' && Object.keys(req.body).length === 0)) {
-         // Returning 202 instead of 400 for empty ping bodies from generic tools
-         res.status(202).json({ status: "Accepted" });
-         return;
-      }
-      
-      const parsedBody = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-      
-      if (sessionTransport.onmessage) {
-        await sessionTransport.onmessage(parsedBody);
-      }
-      res.status(202).json({ status: "Accepted" });
-    } catch (error: any) {
-      console.error("Error handling MCP message:", error);
-      res.status(400).json({ error: `Invalid message: ${error.message || String(error)}` });
-    }
+  try {
+     // StreamableHTTPServerTransport natively handles both GET (SSE) and POST (JSON-RPC)
+     // Also, because it's stateless, POST responses will be sent back directly!
+     await transport.handleRequest(req, res, req.body);
+  } catch (error) {
+     console.error("Transport error:", error);
+     if (!res.headersSent) {
+       res.status(500).json({ error: "Internal Server Error during MCP processing" });
+     }
   }
 }
 
