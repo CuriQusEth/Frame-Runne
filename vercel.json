@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/mcp/message(.*)",
+      "destination": "/api/mcp"
+    },
+    {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }

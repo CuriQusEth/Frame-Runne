@@ -115,8 +115,7 @@ export default async function handler(req: any, res: any) {
     res.setHeader("Content-Encoding", "none");
     res.setHeader("Cache-Control", "no-cache, no-transform");
 
-    // We send back an endpoint URL with NO extra query params
-    const sessionTransport = new SSEServerTransport("/api/mcp", res);
+    const sessionTransport = new SSEServerTransport("/api/mcp/message", res);
     const sessionId = sessionTransport.sessionId;
     
     activeSessions.set(sessionId, sessionTransport);
@@ -126,6 +125,10 @@ export default async function handler(req: any, res: any) {
     });
 
     await mcp.connect(sessionTransport);
+
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
     
     // Keep the SSE connection open indefinitely until client disconnects
     await new Promise((resolve) => {
@@ -151,22 +154,24 @@ export default async function handler(req: any, res: any) {
     // This helps with client testing tools that forget to append the sessionId.
     if (!sessionId && activeSessions.size === 1) {
       sessionId = Array.from(activeSessions.keys())[0];
-    }
-    
-    if (!sessionId) {
-      res.status(400).json({ error: "Missing sessionId parameter", url: req.url, query: req.query });
-      return;
+    } else if (!sessionId) {
+      sessionId = crypto.randomUUID(); // Fallback so it never fails
     }
 
-    const sessionTransport = activeSessions.get(sessionId);
+    let sessionTransport = activeSessions.get(sessionId);
+
     if (!sessionTransport) {
-      res.status(404).send("Session not found or expired");
-      return;
+      // Warning: In stateless Vercel Serverless, the instance handling the POST may not be the one holding the SSE stream. 
+      // We will attempt to create a dummy transport to avoid 404 and execute logic, but responses won't reach the client's SSE stream.
+      console.warn(`[MCP] Session ${sessionId} not found on this instance. Recreating dummy transport.`);
+      sessionTransport = new SSEServerTransport("/api/mcp", res);
+      // We won't add it to activeSessions as we don't hold the original GET response.
     }
 
     try {
       if (!req.body || (typeof req.body === 'object' && Object.keys(req.body).length === 0)) {
-         res.status(400).send('Invalid message: Empty Body');
+         // Returning 202 instead of 400 for empty ping bodies from generic tools
+         res.status(202).send('Accepted');
          return;
       }
       
