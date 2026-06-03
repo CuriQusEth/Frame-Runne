@@ -119,9 +119,14 @@ export default async function handler(req: any, res: any) {
   if (req.method === "GET") {
     const sessionId = Math.random().toString(36).substring(7);
     
+    // Construct absolute URL for the endpoint
+    const host = req.headers.host || "localhost:3000";
+    const protocol = req.headers["x-forwarded-proto"] || (host.includes("localhost") ? "http" : "https");
+    const absoluteEndpoint = `${protocol}://${host}/api/mcp?sessionId=${sessionId}`;
+    
     // We mock the ServerResponse stream for SSEServerTransport
     const sessionTransport = new SSEServerTransport(
-      `/api/mcp?sessionId=${sessionId}`, 
+      absoluteEndpoint, 
       res as any
     );
     
@@ -137,7 +142,11 @@ export default async function handler(req: any, res: any) {
 
   // Handle JSON-RPC Execution (POST)
   if (req.method === "POST") {
-    const sessionId = req.query.sessionId as string;
+    // Parse URL manually to ensure we get query parameters safely
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const host = req.headers.host || "localhost";
+    const fullUrl = new URL(req.url, `${protocol}://${host}`);
+    const sessionId = fullUrl.searchParams.get("sessionId") || (req.query && req.query.sessionId);
     
     if (!sessionId) {
       res.status(400).send("Missing sessionId");
@@ -152,7 +161,12 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-      await sessionTransport.handlePostMessage(req as any, res as any);
+      const message = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+      if (sessionTransport.onmessage) {
+        // SSEServerTransport uses onmessage to receive incoming json payloads
+        await sessionTransport.onmessage(message);
+      }
+      res.status(202).send("Accepted");
     } catch (error) {
       console.error("Error handling MCP message:", error);
       if (!res.headersSent) res.status(500).send("Internal Server Error");
