@@ -4,6 +4,7 @@ import { useAccount, useSignMessage, useSendTransaction } from 'wagmi';
 import { parseEther } from 'viem';
 import { useState } from 'react';
 import { withAttribution } from '../lib/erc8021';
+import { sendGMTransaction } from '../lib/web3/transactions';
 
 export function GameOverScreen({ 
     score, distance, combo, onRetry, onMenu 
@@ -42,16 +43,7 @@ export function GameOverScreen({
       if (!isConnected) return alert("Please connect your wallet first.");
       setLoading(true);
       try {
-          // Zero value tx with 'gm' in data field, attributed with ERC-8021
-          const rawData = '0x676d'; // 'gm' in hex
-          const attributedData = withAttribution(rawData);
-          
-          const tx = await sendTransactionAsync({
-              to: '0x0000000000000000000000000000000000000000', // Burn/Null address for demo
-              value: parseEther('0'),
-              data: attributedData
-          });
-          
+          const tx = await sendGMTransaction();
           alert(`Said GM on-chain! Tx: ${tx}`);
       } catch (e) {
           console.error(e);

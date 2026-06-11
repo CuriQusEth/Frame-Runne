@@ -5,6 +5,7 @@ import { config } from './lib/web3/config';
 import { TitleScreen } from './screens/TitleScreen';
 import { GameScreen } from './screens/GameScreen';
 import { GameOverScreen } from './screens/GameOverScreen';
+import { GlobalActions } from './components/GlobalActions';
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ export default function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <div className="bg-[#050505] min-h-screen text-[#e0e0e0] font-sans selection:bg-[#00f3ff]/30">
+          <GlobalActions />
           {gameState === 'MENU' && (
             <TitleScreen onPlay={() => setGameState('PLAYING')} />
           )}

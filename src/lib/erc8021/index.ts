@@ -1,6 +1,6 @@
 // ERC-8021: Protocol Specification for Smart Contract Attribution
 
-const BUILDER_CODE = 'bc_sk8zi9r3';
+const BUILDER_CODE = '[BUILDER_CODE]';
 const ATTRIBUTION_CODE = '[ATTRIBUTION_CODE]';
 
 /**
